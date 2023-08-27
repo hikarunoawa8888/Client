@@ -9,7 +9,7 @@ os.system("pip install oauth2client")
 os.system("pip install requests")
 
 os.system("curl -o up.py https://raw.githubusercontent.com/davidrazmadzeExtra/YouTube_Python3_Upload_Video/main/upload_video.py")
-os.system("curl -o client_secrets.json https://pastebin.com/raw/r3CXE2V4")
+os.system("curl -o client_secrets.json https://raw.githubusercontent.com/hikarunoawa8888/Client/main/client_secrets.json")
 
 judul = input("Judul :")
 linkdl = input("Link Pixel Drain:")
