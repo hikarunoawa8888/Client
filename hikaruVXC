@@ -3,6 +3,11 @@ import time
 
 print("Starting Script")
 
+os.system("pip install --upgrade google-api-python-client")
+os.system("pip install --upgrade google-auth-oauthlib google-auth-httplib2")
+os.system("pip install oauth2client")
+os.system("pip install requests")
+
 os.system("curl -o up.py https://raw.githubusercontent.com/davidrazmadzeExtra/YouTube_Python3_Upload_Video/main/upload_video.py")
 os.system("curl -o client_secrets.json https://pastebin.com/raw/r3CXE2V4")
 
