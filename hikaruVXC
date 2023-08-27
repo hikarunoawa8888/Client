@@ -1,0 +1,29 @@
+import os
+import time
+
+print("Starting Script")
+
+os.system("curl -o up.py https://raw.githubusercontent.com/davidrazmadzeExtra/YouTube_Python3_Upload_Video/main/upload_video.py")
+os.system("curl -o client_secrets.json https://pastebin.com/raw/r3CXE2V4")
+
+judul = input("Judul :")
+linkdl = input("Link Pixel Drain:")
+
+def pddownloader(link):
+  import requests
+  index_slash = link.find("u/")
+  text_after_slash = link[index_slash + 2:]  # Mengambil teks setelah "/"
+  print("ID Vidio", text_after_slash)
+  dl = "https://pixeldrain.com/api/file/"
+  os.system(f"curl -o vid.mp4 {dl}{text_after_slash}")
+  print("File Downloaded")
+
+def ytuploader(titlee):
+  vidio = "vid.mp4"
+  os.system(f"python3 up.py --file='vid.mp4' --noauth_local_webserver --title={titlee}")
+  time.sleep(5)
+  os.system("rm vid.mp4 -rf")
+  
+pddownloader(linkdl)
+ytuploader(judul)
+print("Done")
