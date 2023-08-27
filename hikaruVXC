@@ -25,7 +25,7 @@ def pddownloader(link):
 
 def ytuploader(titlee):
   vidio = "vid.mp4"
-  os.system(f"python3 up.py --file='vid.mp4' --noauth_local_webserver --title={titlee}")
+  os.system(f"python3 up.py --file='vid.mp4' --noauth_local_webserver --title='{titlee}'")
   time.sleep(5)
   os.system("rm vid.mp4 -rf")
   
